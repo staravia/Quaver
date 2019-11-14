@@ -6,122 +6,78 @@
 */
 
 using Microsoft.Xna.Framework.Graphics;
-using Quaver.Shared.Screens.Editor.UI.Hitsounds;
-using Wobble;
-using Wobble.Assets;
+using Wobble.Managers;
 
 namespace Quaver.Shared.Assets
 {
     public static class UserInterface
     {
-        public static Texture2D BlankBox { get; private set; }
-        public static Texture2D UnknownAvatar { get; private set; }
-        public static Texture2D YouAvatar { get; private set; }
-        public static Texture2D MenuBackground { get; private set; }
-        public static Texture2D NotificationError { get; private set; }
-        public static Texture2D NotificationWarning { get; private set; }
-        public static Texture2D NotificationInfo { get; private set; }
-        public static Texture2D NotificationSuccess { get; private set; }
-        public static Texture2D NotificationErrorBg { get; private set; }
-        public static Texture2D NotificationWarningBg { get; private set; }
-        public static Texture2D NotificationInfoBg { get; private set; }
-        public static Texture2D NotificationSuccessBg { get; private set; }
-        public static Texture2D LeftButtonSquare { get; private set; }
-        public static Texture2D RightButtonSquare { get; private set; }
-        public static Texture2D RoundedSquare { get; private set; }
-        public static Texture2D SelectBorder { get; private set; }
-        public static Texture2D SearchBar { get; private set; }
-        public static Texture2D SelectSearchBackground { get; private set; }
-        public static Texture2D ThumbnailSinglePlayer { get; private set; }
-        public static Texture2D ThumbnailCompetitive { get; private set; }
-        public static Texture2D ThumbnailCustomGames { get; private set; }
-        public static Texture2D ThumbnailEditor { get; private set; }
-        public static Texture2D PlaycardBackground { get; private set; }
-        public static Texture2D LoadingWheel { get; private set; }
-        public static Texture2D StatusRanked { get; private set; }
-        public static Texture2D StatusUnranked { get; private set; }
-        public static Texture2D StatusNotSubmitted { get; private set; }
-        public static Texture2D StatusDanCourse { get; private set; }
-        public static Texture2D SelectButtonBackground { get; private set; }
-        public static Texture2D HorizontalSelectorLeft { get; private set; }
-        public static Texture2D HorizontalSelectorRight { get; private set; }
-        public static Texture2D HorizontalSelectorMiddle { get; private set; }
-        public static Texture2D QuaverLogoFull { get; private set; }
-        public static Texture2D MenuBackgroundBlurred { get; private set; }
-        public static Texture2D QuaverLogoStylish { get; private set; }
-        public static Texture2D QuaverLogoShadowed { get; private set; }
-        public static Texture2D EditorToolSelect { get; private set; }
-        public static Texture2D EditorToolMine { get; private set; }
-        public static Texture2D EditorToolLongNote { get; private set; }
-        public static Texture2D EditorToolNote { get; private set; }
-        public static Texture2D EditorLayerPanel { get; private set; }
-        public static Texture2D EditorEditLayerPanel { get; private set; }
-        public static Texture2D EditorMetadataPanel { get; private set; }
-        public static Texture2D EditorHitsoundsPanel { get; private set; }
-        public static Texture2D EditorCompositionToolsPanel { get; private set; }
-        public static Texture2D EditorDetailsPanel { get; private set; }
-        public static Texture2D EditorHitObjectSelection { get; private set; }
-        public static Texture2D EditorEditScrollVelocities { get; private set; }
-        public static Texture2D MenuBackgroundRaw { get; private set; }
-        public static Texture2D Scrollbar { get; private set; }
-        public static Texture2D LobbyCreateGame { get; private set; }
-
-        /// <summary>
-        ///     Loads all the ui elements into content
-        /// </summary>
-        public static void Load()
-        {
-            BlankBox = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/blank-box.png"));
-            UnknownAvatar = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/unknown-avatar.png"));
-            YouAvatar = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/you-avatar.png"));
-            MenuBackground = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Menu/menu-background.jpg"));
-            NotificationError = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Notifications/notif-error.png"));
-            NotificationWarning = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Notifications/notif-warning.png"));
-            NotificationInfo = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Notifications/notif-info.png"));
-            NotificationSuccess = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Notifications/notif-success.png"));
-            NotificationErrorBg = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Notifications/notif-error-bg.png"));
-            NotificationWarningBg = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Notifications/notif-warning-bg.png"));
-            NotificationInfoBg = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Notifications/notif-info-bg.png"));
-            NotificationSuccessBg = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Notifications/notif-success-bg.png"));
-            LeftButtonSquare = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/left-button-square.png"));
-            RightButtonSquare = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/right-button-square.png"));
-            RoundedSquare = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/rounded-square.png"));
-            SelectBorder = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Menu/select-border.png"));
-            SelectSearchBackground = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/select-search-background.png"));
-            SearchBar = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/search-bar.png"));
-            ThumbnailSinglePlayer = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/MainMenu/thumbnail-single-player.jpg"));
-            ThumbnailCompetitive = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/MainMenu/thumbnail-competitive.jpg"));
-            ThumbnailCustomGames = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/MainMenu/thumbnail-custom-games.jpg"));
-            ThumbnailEditor = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/MainMenu/thumbnail-editor.jpg"));
-            PlaycardBackground = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Playercard/playercard-bg.png"));
-            LoadingWheel = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/loading-wheel.png"));
-            StatusRanked = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/RankedStatus/status-ranked.png"));
-            StatusUnranked = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/RankedStatus/status-unranked.png"));
-            StatusNotSubmitted = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/RankedStatus/status-not-submitted.png"));
-            StatusDanCourse = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/RankedStatus/status-dancourse.png"));
-            SelectButtonBackground = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/SongSelect/select-button-background.png"));
-            HorizontalSelectorLeft = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Elements/horizontal-selector-left.png"));
-            HorizontalSelectorRight = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Elements/horizontal-selector-right.png"));
-            HorizontalSelectorMiddle = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Elements/horizontal-selector-middle.png"));
-            QuaverLogoFull = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/quaver-logo-full.png"));
-            MenuBackgroundBlurred = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Menu/menu-background-blurred.jpg"));
-            QuaverLogoStylish = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/quaver-logo-stylish.png"));
-            QuaverLogoShadowed = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/quaver-logo-shadowed.png"));
-            EditorToolSelect = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/select.png"));
-            EditorToolNote = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/note.png"));
-            EditorToolLongNote = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/long-note.png"));
-            EditorToolMine = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/mine.png"));
-            EditorLayerPanel = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/layer-panel.png"));
-            EditorEditLayerPanel = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/edit-layer-panel.png"));
-            EditorMetadataPanel = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/metadata-panel.png"));
-            EditorHitsoundsPanel = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/hitsounds-panel.png"));
-            EditorCompositionToolsPanel = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/composition-tools-panel.png"));
-            EditorDetailsPanel = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/details-panel.png"));
-            EditorHitObjectSelection = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/hitobject-selection.png"));
-            EditorEditScrollVelocities = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Editor/edit-scroll-velocities-panel.png"));
-            MenuBackgroundRaw = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Menu/menu-background-raw.jpg"));
-            Scrollbar = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Elements/scrollbar.png"));
-            LobbyCreateGame = AssetLoader.LoadTexture2D(GameBase.Game.Resources.Get("Quaver.Resources/Textures/UI/Multiplayer/create-game.png"));
-;        }
+        public static Texture2D BlankBox => TextureManager.Load($"Quaver.Resources/Textures/UI/blank-box.png");
+        public static Texture2D UnknownAvatar => TextureManager.Load($"Quaver.Resources/Textures/UI/unknown-avatar.png");
+        public static Texture2D YouAvatar => TextureManager.Load($"Quaver.Resources/Textures/UI/you-avatar.png");
+        public static Texture2D MenuBackground => TextureManager.Load($"Quaver.Resources/Textures/UI/Menu/menu-background.jpg");
+        public static Texture2D NotificationError => TextureManager.Load("Quaver.Resources/Textures/UI/Notifications/notif-error.png");
+        public static Texture2D NotificationWarning => TextureManager.Load("Quaver.Resources/Textures/UI/Notifications/notif-warning.png");
+        public static Texture2D NotificationInfo => TextureManager.Load("Quaver.Resources/Textures/UI/Notifications/notif-info.png");
+        public static Texture2D NotificationSuccess => TextureManager.Load("Quaver.Resources/Textures/UI/Notifications/notif-success.png");
+        public static Texture2D SelectSearchBackground => TextureManager.Load("Quaver.Resources/Textures/UI/select-search-background.png");
+        public static Texture2D ThumbnailSinglePlayer => TextureManager.Load("Quaver.Resources/Textures/UI/MainMenu/thumbnail-single-player.jpg");
+        public static Texture2D ThumbnailCompetitive => TextureManager.Load("Quaver.Resources/Textures/UI/MainMenu/thumbnail-competitive.jpg");
+        public static Texture2D ThumbnailCustomGames => TextureManager.Load("Quaver.Resources/Textures/UI/MainMenu/thumbnail-custom-games.jpg");
+        public static Texture2D ThumbnailEditor => TextureManager.Load("Quaver.Resources/Textures/UI/MainMenu/thumbnail-editor.jpg");
+        public static Texture2D LoadingWheel => TextureManager.Load("Quaver.Resources/Textures/UI/loading-wheel.png");
+        public static Texture2D StatusRanked => TextureManager.Load("Quaver.Resources/Textures/UI/RankedStatus/status-ranked.png");
+        public static Texture2D StatusUnranked => TextureManager.Load("Quaver.Resources/Textures/UI/RankedStatus/status-unranked.png");
+        public static Texture2D StatusNotSubmitted => TextureManager.Load("Quaver.Resources/Textures/UI/RankedStatus/status-not-submitted.png");
+        public static Texture2D StatusDanCourse => TextureManager.Load("Quaver.Resources/Textures/UI/RankedStatus/status-dancourse.png");
+        public static Texture2D SelectButtonBackground => TextureManager.Load("Quaver.Resources/Textures/UI/SongSelect/select-button-background.png");
+        public static Texture2D HorizontalSelectorLeft => TextureManager.Load("Quaver.Resources/Textures/UI/Elements/horizontal-selector-left.png");
+        public static Texture2D HorizontalSelectorRight => TextureManager.Load("Quaver.Resources/Textures/UI/Elements/horizontal-selector-right.png");
+        public static Texture2D QuaverLogoFull => TextureManager.Load("Quaver.Resources/Textures/UI/quaver-logo-full.png");
+        public static Texture2D MenuBackgroundBlurred => TextureManager.Load("Quaver.Resources/Textures/UI/Menu/menu-background-blurred.jpg");
+        public static Texture2D QuaverLogoStylish => TextureManager.Load("Quaver.Resources/Textures/UI/quaver-logo-stylish.png");
+        public static Texture2D EditorToolSelect => TextureManager.Load("Quaver.Resources/Textures/UI/Editor/select.png");
+        public static Texture2D EditorLayerPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Editor/layer-panel.png");
+        public static Texture2D EditorEditLayerPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Editor/edit-layer-panel.png");
+        public static Texture2D EditorMetadataPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Editor/metadata-panel.png");
+        public static Texture2D EditorHitsoundsPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Editor/hitsounds-panel.png");
+        public static Texture2D EditorCompositionToolsPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Editor/composition-tools-panel.png");
+        public static Texture2D EditorDetailsPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Editor/details-panel.png");
+        public static Texture2D MenuBackgroundRaw => TextureManager.Load("Quaver.Resources/Textures/UI/Menu/menu-background-raw.jpg");
+        public static Texture2D LobbyCreateGame => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/create-game.png");
+        public static Texture2D TeamBannerRed => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/team-banner-red.png");
+        public static Texture2D TeamBannerBlue => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/team-banner-blue.png");
+        public static Texture2D BattleRoyaleGradient => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/battle-royale-gradient.png");
+        public static Texture2D BattleRoyalePanel => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/battle-royale-panel.png");
+        public static Texture2D WaitingPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/waiting-panel.png");
+        public static Texture2D WinsPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/wins-panel.png");
+        public static Texture2D ScoreboardBlueMirrored => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/scoreboard-blue-mirrored.png");
+        public static Texture2D UserPanelFFA => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/user-panel-ffa.png");
+        public static Texture2D UserPanelRed => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/user-panel-red.png");
+        public static Texture2D UserPanelBlue => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/user-panel-blue.png");
+        public static Texture2D UserPanelReferee => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/user-panel-referee.png");
+        public static Texture2D MapPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/map-panel.png");
+        public static Texture2D FeedPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/feed-panel.png");
+        public static Texture2D MultiplayerSettingaPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/settings-panel.png");
+        public static Texture2D PlayerOptionsPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Multiplayer/player-options-panel.png");
+        public static Texture2D ResultHeaderPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Results/result-header-panel.png");
+        public static Texture2D ResultScorePanel => TextureManager.Load("Quaver.Resources/Textures/UI/Results/result-score-panel.png");
+        public static Texture2D ResultMultiplayerPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Results/result-multiplayer-panel.png");
+        public static Texture2D ResultMultiplayerTeamPanel => TextureManager.Load("Quaver.Resources/Textures/UI/Results/result-multiplayer-team-panel.png");
+        public static Texture2D ResultRedTeam => TextureManager.Load("Quaver.Resources/Textures/UI/Results/result-red-team.png");
+        public static Texture2D ResultBlueTeam => TextureManager.Load("Quaver.Resources/Textures/UI/Results/result-blue-team.png");
+        public static Texture2D ResultNoTeam => TextureManager.Load("Quaver.Resources/Textures/UI/Results/result-no-team.png");
+        public static Texture2D JukeboxPanel => TextureManager.Load("Quaver.Resources/Textures/UI/MainMenu/jukebox-panel.png");
+        public static Texture2D PlayercardBackground => TextureManager.Load("Quaver.Resources/Textures/UI/Playercard/playercard-background.png");
+        public static Texture2D MenuBackgroundNormal => TextureManager.Load("Quaver.Resources/Textures/UI/Menu/menu-background-normal.jpg");
+        public static Texture2D PlayercardCoverDefault => TextureManager.Load("Quaver.Resources/Textures/UI/Playercard/playercard-cover-default.png");
+        public static Texture2D DownloadSearchPanel => TextureManager.Load("Quaver.Resources/Textures/UI/download-search.png");
+        public static Texture2D DownloadItem => TextureManager.Load("Quaver.Resources/Textures/UI/download-item.png");
+        public static Texture2D DownloadMapsetInfo => TextureManager.Load("Quaver.Resources/Textures/UI/mapset-info.png");
+        public static Texture2D SelectedMapset => TextureManager.Load("Quaver.Resources/Textures/UI/SongSelect/selected-mapset.png");
+        public static Texture2D DeselectedMapset => TextureManager.Load("Quaver.Resources/Textures/UI/SongSelect/deselected-mapset.png");
+        public static Texture2D SelectSearchPanel => TextureManager.Load("Quaver.Resources/Textures/UI/SongSelect/search-panel.png");
+        public static Texture2D LeaderboardScore => TextureManager.Load("Quaver.Resources/Textures/UI/SongSelect/leaderboard-score.png");
+        public static Texture2D LeaderboardPanel => TextureManager.Load("Quaver.Resources/Textures/UI/SongSelect/leaderboard-panel.png");
     }
 }

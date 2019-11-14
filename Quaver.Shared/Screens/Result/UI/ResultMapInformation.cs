@@ -10,9 +10,13 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Quaver.API.Helpers;
 using Quaver.Shared.Assets;
+using Quaver.Shared.Database.Judgements;
 using Quaver.Shared.Database.Maps;
 using Quaver.Shared.Graphics.Backgrounds;
+using Quaver.Shared.Helpers;
+using Quaver.Shared.Online;
 using Quaver.Shared.Skinning;
+using Wobble.Assets;
 using Wobble.Graphics;
 using Wobble.Graphics.Animations;
 using Wobble.Graphics.Sprites;
@@ -35,22 +39,22 @@ namespace Quaver.Shared.Screens.Result.UI
         /// <summary>
         ///     Displays the difficulty name of the map
         /// </summary>
-        private SpriteText DifficultyName { get; set; }
+        private SpriteTextBitmap DifficultyName { get; set; }
 
         /// <summary>
         ///     Displays the title of the song.
         /// </summary>
-        private SpriteText SongTitle { get; set; }
+        private SpriteTextBitmap SongTitle { get; set; }
 
         /// <summary>
         ///     Displays the creator of the map.
         /// </summary>
-        private SpriteText MapCreator { get; set; }
+        private SpriteTextBitmap MapCreator { get; set; }
 
         /// <summary>
         ///     Displays the player of the map.
         /// </summary>
-        private SpriteText PlayedBy { get; set; }
+        private SpriteTextBitmap PlayedBy { get; set; }
 
         /// <summary>
         ///     Displays the grade achieved on the score
@@ -68,11 +72,8 @@ namespace Quaver.Shared.Screens.Result.UI
         public ResultMapInformation(ResultScreen screen)
         {
             Screen = screen;
-            Size = new ScalableVector2(WindowManager.Width - 56, 160);
-            Tint = Color.Black;
-            Alpha = 0.45f;
-
-            AddBorder(Color.White, 2);
+            Size = new ScalableVector2(WindowManager.Width - 56, 126);
+            Image = UserInterface.ResultHeaderPanel;
 
             CreateThumbnail();
             CreateDifficultyName();
@@ -94,11 +95,11 @@ namespace Quaver.Shared.Screens.Result.UI
                 Parent = this,
                 Alignment = Alignment.MidLeft,
                 X = 10,
-                Size = new ScalableVector2(256, 144),
+                Size = new ScalableVector2(222, 110),
                 Alpha = 0
             };
 
-            Thumbnail.AddBorder(Color.White);
+            Thumbnail.AddBorder(ColorHelper.HexToColor("#236f9c"));
             UpdateThumbnailImage();
         }
 
@@ -121,14 +122,35 @@ namespace Quaver.Shared.Screens.Result.UI
         {
             var text = $"[{Map.DifficultyName}]";
 
+            var windows = "";
+
+            switch (Screen.ResultsType)
+            {
+                case ResultScreenType.Gameplay:
+                    if (JudgementWindowsDatabaseCache.Selected.Value.Name != JudgementWindowsDatabaseCache.Standard.Name)
+                        windows = $" ({JudgementWindowsDatabaseCache.Selected.Value.Name})";
+                    break;
+                case ResultScreenType.Score:
+                    if (Screen.Score.JudgementWindowPreset != null && Screen.Score.JudgementWindowPreset != JudgementWindowsDatabaseCache.Standard.Name)
+                        windows = $" ({Screen.Score.JudgementWindowPreset})";
+                    break;
+                case ResultScreenType.Replay:
+                    break;
+                default:
+                    break;
+            }
+
             if (Screen.ScoreProcessor.Mods != 0)
                 text += $" + {ModHelper.GetModsString(Screen.ScoreProcessor.Mods)}";
 
-            DifficultyName = new SpriteText(Fonts.Exo2SemiBold, text, 13)
+            text += windows;
+
+            DifficultyName = new SpriteTextBitmap(FontsBitmap.GothamRegular, text)
             {
                 Parent = this,
-                X = Thumbnail.X + Thumbnail.Width + 10,
-                Y = 25
+                X = Thumbnail.X + Thumbnail.Width + 14,
+                Y = 14,
+                FontSize = 17
             };
         }
 
@@ -139,11 +161,12 @@ namespace Quaver.Shared.Screens.Result.UI
         {
             var title = $"{Map.Artist} - {Map.Title}";
 
-            SongTitle = new SpriteText(Fonts.Exo2SemiBold, title, 13)
+            SongTitle = new SpriteTextBitmap(FontsBitmap.GothamRegular, title)
             {
                 Parent = this,
                 X = DifficultyName.X,
-                Y = DifficultyName.Y + DifficultyName.Height + 8
+                Y = DifficultyName.Y + DifficultyName.Height + 10,
+                FontSize = 17
             };
         }
 
@@ -154,11 +177,12 @@ namespace Quaver.Shared.Screens.Result.UI
         {
             var text = $"By: {Map.Creator}";
 
-            MapCreator = new SpriteText(Fonts.Exo2SemiBold, text, 13)
+            MapCreator = new SpriteTextBitmap(FontsBitmap.GothamRegular, text)
             {
                 Parent = this,
                 X = SongTitle.X,
-                Y = SongTitle.Y + SongTitle.Height + 8
+                Y = SongTitle.Y + SongTitle.Height + 10,
+                FontSize = 17
             };
         }
 
@@ -167,7 +191,7 @@ namespace Quaver.Shared.Screens.Result.UI
         /// </summary>
         private void CreatePlayerName()
         {
-            var text = $"Played By: {Screen.Replay.PlayerName} on";
+            var text = OnlineManager.CurrentGame != null ? "Match Played on" : $"Played By: {Screen.Replay.PlayerName} on";
 
             switch (Screen.ResultsType)
             {
@@ -185,12 +209,15 @@ namespace Quaver.Shared.Screens.Result.UI
                     throw new ArgumentOutOfRangeException();
             }
 
-            PlayedBy = new SpriteText(Fonts.Exo2SemiBold, text, 13)
+            PlayedBy = new SpriteTextBitmap(FontsBitmap.GothamRegular, text)
             {
                 Parent = this,
                 X = SongTitle.X,
-                Y = MapCreator.Y + MapCreator.Height + 8
+                Y = MapCreator.Y + MapCreator.Height + 10,
+                FontSize = 17
             };
+
+            PlayedBy.Visible = true;
         }
 
         /// <summary>
@@ -222,7 +249,7 @@ namespace Quaver.Shared.Screens.Result.UI
                 Parent = this,
                 Alignment = Alignment.MidRight,
                 X = -50,
-                Size = new ScalableVector2(100, 100),
+                Size = new ScalableVector2(66, 66),
                 Image = image
             };
         }

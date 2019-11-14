@@ -7,8 +7,10 @@
 
 using System;
 using Quaver.API.Enums;
+using Quaver.API.Helpers;
 using Quaver.API.Maps.Processors.Scoring;
 using Quaver.Shared.Assets;
+using Quaver.Shared.Database.Judgements;
 using Quaver.Shared.Skinning;
 using Wobble.Graphics;
 using Wobble.Graphics.Sprites;
@@ -38,7 +40,7 @@ namespace Quaver.Shared.Screens.Result.UI
             Container = container;
             Processor = processor;
 
-            Size = new ScalableVector2(container.VerticalDividerLine.X - container.Border.Thickness * 2, 268);
+            Size = new ScalableVector2(container.VerticalDividerLine.X - 2 * 2, 268);
             Tint = Color.Black;
             Alpha = 0;
 
@@ -58,12 +60,13 @@ namespace Quaver.Shared.Screens.Result.UI
 
                 var color = SkinManager.Skin.Keys[GameMode.Keys4].JudgeColors[j];
 
-                var judgementName = new SpriteText(Fonts.SourceSansProSemiBold, j.ToString().ToUpper(), 13)
+                var judgementName = new SpriteTextBitmap(FontsBitmap.GothamRegular, j.ToString().ToUpper())
                 {
                     Parent = this,
-                    Y = i * 42 + 18,
+                    Y = i * 50 + 24,
                     X = 15,
-                    Tint = color
+                    Tint = color,
+                    FontSize = 16
                 };
 
                 var percentage = Processor.CurrentJudgements[j] == 0 ? 0 : (float)Processor.CurrentJudgements[j] / Processor.TotalJudgementCount;
@@ -81,13 +84,54 @@ namespace Quaver.Shared.Screens.Result.UI
                 if (progressBar.Width <= 1)
                     progressBar.Width = 1;
 
-                var judgementAmount = new SpriteText(Fonts.SourceSansProSemiBold, $"{Processor.CurrentJudgements[j]:N0} ({percentage * 100:0.0}%)", 13)
+                var judgementAmount = new SpriteTextBitmap(FontsBitmap.GothamRegular, $"{Processor.CurrentJudgements[j]:N0} ({percentage * 100:0.0}%)")
                 {
                     Parent = progressBar,
                     Alignment = Alignment.MidLeft,
                     Tint = color,
-                    X = progressBar.Width + 10
+                    X = progressBar.Width + 10,
+                    FontSize = 15
                 };
+
+                var windows = new SpriteTextBitmap(FontsBitmap.GothamRegular, $"")
+                {
+                    Parent = progressBar,
+                    Alignment = Alignment.MidLeft,
+                    Tint = color,
+                    X = judgementAmount.X + judgementAmount.Width + 3,
+                    FontSize = 15
+                };
+
+                if (Container.StandardizedProcessor != null)
+                    windows.Text = $" - {Processor.JudgementWindow[j] / ModHelper.GetRateFromMods(Processor.Mods)} ms";
+                else if (Container.Screen.ResultsType == ResultScreenType.Score
+                         && Container.Screen.Score.JudgementWindowPreset != JudgementWindowsDatabaseCache.Standard.Name
+                         && Container.Screen.Score.JudgementWindowPreset != null)
+                {
+                    switch (j)
+                    {
+                        case Judgement.Marv:
+                            windows.Text = " - " + Container.Screen.Score.JudgementWindowMarv;
+                            break;
+                        case Judgement.Perf:
+                            windows.Text = " - " + Container.Screen.Score.JudgementWindowPerf;
+                            break;
+                        case Judgement.Great:
+                            windows.Text = " - " + Container.Screen.Score.JudgementWindowGreat;
+                            break;
+                        case Judgement.Good:
+                            windows.Text = " - " + Container.Screen.Score.JudgementWindowGood;
+                            break;
+                        case Judgement.Okay:
+                            windows.Text = " - " + Container.Screen.Score.JudgementWindowOkay;
+                            break;
+                        case Judgement.Miss:
+                            windows.Text = " - " + Container.Screen.Score.JudgementWindowMiss;
+                            break;
+                    }
+
+                    windows.Text += " ms";
+                }
 
                 i++;
             }

@@ -11,14 +11,18 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Quaver.API.Enums;
+using Quaver.Server.Common.Objects.Multiplayer;
 using Quaver.Shared.Config;
 using Quaver.Shared.Database.Maps;
 using Quaver.Shared.Graphics;
+using Quaver.Shared.Online;
 using Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield.Health;
 using Quaver.Shared.Screens.Gameplay.UI;
 using Quaver.Shared.Screens.Gameplay.UI.Health;
+using Quaver.Shared.Screens.Gameplay.UI.Multiplayer;
 using Quaver.Shared.Skinning;
 using Wobble;
+using Wobble.Assets;
 using Wobble.Graphics;
 using Wobble.Graphics.Sprites;
 using Wobble.Window;
@@ -130,9 +134,18 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
         private SongInformation SongInfo { get; set; }
 
         /// <summary>
+        ///     Displays last place/elimination alerts for battle royale
+        /// </summary>
+        private BattleRoyaleAlert BattleRoyaleAlert { get; set; }
+
+        /// <summary>
         ///     Make a quicker and shorter reference to the game skin
         /// </summary>
         private SkinKeys Skin => SkinManager.Skin.Keys[Screen.Map.Mode];
+
+        /// <summary>
+        /// </summary>
+        private BattleRoyalePlayerEliminated BattleRoyalePlayerEliminated { get; set; }
 
         /// <summary>
         ///     Ctor
@@ -147,7 +160,6 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             CreateStageLeft();
             CreateStageRight();
             CreateBgMask();
-            CreateHitPositionOverlay();
 
             // Depending on what the skin.ini's value is, we'll want to either initialize
             // the receptors first, or the playfield first.
@@ -156,10 +168,12 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 CreateTimingLineContainer();
                 CreateHitObjectContainer();
                 CreateReceptorsAndLighting();
+                CreateHitPositionOverlay();
             }
             else
             {
                 CreateReceptorsAndLighting();
+                CreateHitPositionOverlay();
                 CreateTimingLineContainer();
                 CreateHitObjectContainer();
             }
@@ -175,6 +189,15 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 CreateHitError();
                 CreateHitLighting();
                 CreateJudgementHitBurst();
+
+                if (OnlineManager.CurrentGame?.Ruleset == MultiplayerGameRuleset.Battle_Royale &&
+                    ConfigManager.EnableBattleRoyaleAlerts.Value)
+                {
+                    CreateBattleRoyaleAlert();
+                    CreateBattleRoyaleEliminated();
+                }
+
+
                 CreateSongInfo();
             }
             else
@@ -183,6 +206,14 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
                 CreateHitError();
                 CreateJudgementHitBurst();
                 CreateHitLighting();
+
+                if (OnlineManager.CurrentGame?.Ruleset == MultiplayerGameRuleset.Battle_Royale &&
+                    ConfigManager.EnableBattleRoyaleAlerts.Value)
+                {
+                    CreateBattleRoyaleAlert();
+                    CreateBattleRoyaleEliminated();
+                }
+
                 CreateSongInfo();
                 CreateLaneCoverOverlay();
             }
@@ -259,15 +290,42 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             // Create Stage HitPosition Overlay
             var sizeY = Skin.StageHitPositionOverlay.Height * Playfield.Width / Skin.StageHitPositionOverlay.Width;
             var offsetY = Playfield.LaneSize * ((float)Skin.NoteReceptorsUp[0].Height / Skin.NoteReceptorsUp[0].Width);
+            var width = Playfield.Width;
+
+            float y;
+            switch (GameplayRulesetKeys.ScrollDirection)
+            {
+                case ScrollDirection.Down:
+                    y = Playfield.ReceptorPositionY.First() - sizeY + Skin.HitPosOffsetY;
+                    break;
+                case ScrollDirection.Up:
+                    y = Playfield.ReceptorPositionY.First() + offsetY - Skin.HitPosOffsetY;
+                    break;
+                case ScrollDirection.Split:
+                    y = Playfield.ReceptorPositionY.First() - sizeY + Skin.HitPosOffsetY;
+                    width = Playfield.Width / 2;
+
+                    var splitHitPositionOverlay = new Sprite
+                    {
+                        Parent = Playfield.ForegroundContainer,
+                        Image = Skin.StageHitPositionOverlay,
+                        Rotation = 180,
+                        Size = new ScalableVector2(width, sizeY),
+                        X = width,
+                        Y = Playfield.ReceptorPositionY.Last() + offsetY - Skin.HitPosOffsetY
+                    };
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
             HitPositionOverlay = new Sprite
             {
                 Parent = Playfield.ForegroundContainer,
                 Image = Skin.StageHitPositionOverlay,
-                Size = new ScalableVector2(Playfield.Width, sizeY),
-                // todo: case statement for scroll direction
-                Y = GameplayRulesetKeys.ScrollDirection.Equals(ScrollDirection.Down) ? Playfield.ReceptorPositionY[0] + Skin.HitPosOffsetY
-                                                    : Playfield.ReceptorPositionY[0] + offsetY + sizeY - Skin.HitPosOffsetY,
+                Rotation = GameplayRulesetKeys.ScrollDirection.Equals(ScrollDirection.Up) ? 180 : 0,
+                Size = new ScalableVector2(width, sizeY),
+                Y = y
             };
         }
 
@@ -514,6 +572,31 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield
             Parent = Playfield.ForegroundContainer,
             Alignment = Alignment.MidCenter,
             Y = -200
+        };
+
+        /// <summary>
+        ///     Creates the sprite that displays battle royale alerts
+        /// </summary>
+        private void CreateBattleRoyaleAlert()
+        {
+            var width = SkinManager.Skin.BattleRoyaleWarning.Width;
+            var height = SkinManager.Skin.BattleRoyaleWarning.Height;
+            var size = new Vector2(width, height) * Skin.BattleRoyaleAlertScale / height;
+
+            BattleRoyaleAlert = new BattleRoyaleAlert(Screen)
+            {
+                Parent = Playfield.ForegroundContainer,
+                Alignment = Alignment.MidCenter,
+                Position = new ScalableVector2(Skin.BattleRoyaleAlertPosX, Skin.BattleRoyaleAlertPosY),
+                Size = new ScalableVector2(size.X, size.Y),
+            };
+        }
+
+        private void CreateBattleRoyaleEliminated() => BattleRoyalePlayerEliminated = new BattleRoyalePlayerEliminated(Screen)
+        {
+            Parent = Playfield.ForegroundContainer,
+            Alignment = Alignment.MidCenter,
+            Position = new ScalableVector2(Skin.BattleRoyaleEliminatedPosX, Skin.BattleRoyaleEliminatedPosY)
         };
 
         /// <summary>

@@ -17,9 +17,9 @@ namespace Quaver.Shared.Screens.Select.UI.Leaderboard.Selector
     public class LeaderboardSelectorItem : Button
     {
         /// <summary>
-        ///     The SpriteText that displays the item of the selector.
+        ///     The SpriteTextBitmap that displays the item of the selector.
         /// </summary>
-        private SpriteText ItemText { get; }
+        private SpriteTextBitmap ItemText { get; }
 
         /// <summary>
         ///     The line at the bottom of the item.
@@ -40,14 +40,15 @@ namespace Quaver.Shared.Screens.Select.UI.Leaderboard.Selector
         public LeaderboardSelectorItem(string text, bool selected = false, EventHandler action = null)
         {
             Selected = selected;
-            Size = new ScalableVector2(145, 40);
+            Size = new ScalableVector2(155, 40);
             Tint = Color.Black;
             Alpha = Selected ? 0.25f: 0;
 
-            ItemText = new SpriteText(Fonts.Exo2SemiBold, text, 13)
+            ItemText = new SpriteTextBitmap(FontsBitmap.GothamRegular, text)
             {
                 Parent = this,
-                Alignment = Alignment.MidCenter
+                Alignment = Alignment.MidCenter,
+                FontSize = 18
             };
 
             BottomLine = new Sprite()

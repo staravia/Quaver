@@ -13,15 +13,15 @@ namespace Quaver.Shared.Graphics.Menu
     {
         /// <summary>
         /// </summary>
-        private Sprite Icon { get; }
+        public Sprite Icon { get; }
 
         /// <summary>
         /// </summary>
-        private SpriteTextBitmap Title { get; }
+        public SpriteTextBitmap Title { get; }
 
         /// <summary>
         /// </summary>
-        private SpriteTextBitmap Title2 { get; }
+        public SpriteTextBitmap Title2 { get; }
 
         /// <summary>
         /// </summary>
@@ -44,7 +44,7 @@ namespace Quaver.Shared.Graphics.Menu
         public MenuHeader(Texture2D icon, string title, string title2, string subtitle, Color colorTheme)
         {
             Size = new ScalableVector2(WindowManager.Width, 44);
-            Tint = ColorHelper.HexToColor("#181818");
+            Tint = Colors.DarkGray;
             Alpha = 1f;
 
             Icon = new Sprite

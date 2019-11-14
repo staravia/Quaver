@@ -23,7 +23,7 @@ namespace Quaver.Shared.Screens.Download
         /// <summary>
         ///    The amount of mapsets able to be downloaded at once.
         /// </summary>
-        public static int MAX_CONCURRENT_DOWNLOADS { get; } = 5;
+        public static int MAX_CONCURRENT_DOWNLOADS => OnlineManager.IsDonator ? 10 : 5;
 
         /// <summary>
         ///     Downloads an individual mapset.
@@ -45,6 +45,27 @@ namespace Quaver.Shared.Screens.Download
             }
 
             var download = new MapsetDownload(mapset);
+            CurrentDownloads.Add(download);
+
+            return download;
+        }
+
+        public static MapsetDownload Download(int id)
+        {
+            // Require login in order to download.
+            if (!OnlineManager.Connected)
+            {
+                NotificationManager.Show(NotificationLevel.Error, "You must be logged in to download mapsets!");
+                return null;
+            }
+
+            if (CurrentDownloads.Count >= MAX_CONCURRENT_DOWNLOADS)
+            {
+                NotificationManager.Show(NotificationLevel.Error, $"Slow down! You can only download {MAX_CONCURRENT_DOWNLOADS} at a time!");
+                return null;
+            }
+
+            var download = new MapsetDownload(id);
             CurrentDownloads.Add(download);
 
             return download;

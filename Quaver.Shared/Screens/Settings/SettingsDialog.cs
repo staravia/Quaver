@@ -261,20 +261,23 @@ namespace Quaver.Shared.Screens.Settings
                 }
 
                 // Handle device period and buffer length changes.
-                if (ConfigManager.DevicePeriod.Value != Bass.GetConfig(Configuration.DevicePeriod)
-                    || ConfigManager.DeviceBufferLengthMultiplier.Value !=
-                        Bass.GetConfig(Configuration.DeviceBufferLength) / Bass.GetConfig(Configuration.DevicePeriod))
+                if (Environment.OSVersion.Platform == PlatformID.Unix)
                 {
-                    DialogManager.Show(new ConfirmCancelDialog(
-                        "The game must be restarted to apply the new audio device properties. Exit the game now?",
-                        (sender, args) =>
-                        {
-                            // Make sure the config is saved.
-                            Task.Run(ConfigManager.WriteConfigFileAsync).Wait();
+                    if (ConfigManager.DevicePeriod.Value != Bass.GetConfig(Configuration.DevicePeriod)
+                        || ConfigManager.DeviceBufferLengthMultiplier.Value !=
+                        Bass.GetConfig(Configuration.DeviceBufferLength) / Bass.GetConfig(Configuration.DevicePeriod))
+                    {
+                        DialogManager.Show(new ConfirmCancelDialog(
+                            "The game must be restarted to apply the new audio device properties. Exit the game now?",
+                            (sender, args) =>
+                            {
+                                // Make sure the config is saved.
+                                Task.Run(ConfigManager.WriteConfigFileAsync).Wait();
 
-                            var game = GameBase.Game as QuaverGame;
-                            game?.Exit();
-                        }));
+                                var game = GameBase.Game as QuaverGame;
+                                game?.Exit();
+                            }));
+                    }
                 }
 
                 if (dismissDalog)
@@ -327,6 +330,8 @@ namespace Quaver.Shared.Screens.Settings
                     new SettingsSlider(this, "Master Volume", ConfigManager.VolumeGlobal, x => $"{x}%"),
                     new SettingsSlider(this, "Music Volume", ConfigManager.VolumeMusic, x => $"{x}%"),
                     new SettingsSlider(this, "Effect Volume", ConfigManager.VolumeEffect, x => $"{x}%"),
+                    new SettingsBool(this, "Enable Hitsounds", ConfigManager.EnableHitsounds),
+                    new SettingsBool(this, "Enable Keysounds", ConfigManager.EnableKeysounds),
                     new SettingsBool(this, "Pitch Audio With Rate", ConfigManager.Pitched),
                     new SettingsSlider(this, "Global Audio Offset", ConfigManager.GlobalAudioOffset, x => $"{x} ms"),
                     new SettingsCalibrateOffset(this, "Calibrate Offset"),
@@ -345,8 +350,6 @@ namespace Quaver.Shared.Screens.Settings
                     new SettingsScrollDirection(this, "Scroll Direction 4K", ConfigManager.ScrollDirection4K),
                     new SettingsScrollDirection(this, "Scroll Direction 7K", ConfigManager.ScrollDirection7K),
                     new SettingsBool(this, "Blur Background In Gameplay", ConfigManager.BlurBackgroundInGameplay),
-                    new SettingsBool(this, "Enable Hitsounds", ConfigManager.EnableHitsounds),
-                    new SettingsBool(this, "Enable Keysounds", ConfigManager.EnableKeysounds),
                     new SettingsBool(this, "Display Timing Lines", ConfigManager.DisplayTimingLines),
                     new SettingsBool(this, "Display Song Time Progress", ConfigManager.DisplaySongTimeProgress),
                     new SettingsBool(this, "Display Song Time Progress Numbers", ConfigManager.DisplaySongTimeProgressNumbers),
@@ -360,7 +363,9 @@ namespace Quaver.Shared.Screens.Settings
                     new SettingsBool(this, "Top Lane Cover", ConfigManager.LaneCoverTop),
                     new SettingsBool(this, "Bottom Lane Cover", ConfigManager.LaneCoverBottom),
                     new SettingsBool(this, "Display UI Elements Over Lane Covers", ConfigManager.UIElementsOverLaneCover),
-                    new SettingsBool(this, "Smooth Accuracy Changes", ConfigManager.SmoothAccuracyChanges)
+                    new SettingsBool(this, "Smooth Accuracy Changes", ConfigManager.SmoothAccuracyChanges),
+                    new SettingsBool(this, "Enable Battle Royale Background Flashing", ConfigManager.EnableBattleRoyaleBackgroundFlashing),
+                    new SettingsBool(this, "Enable Battle Royale Alerts", ConfigManager.EnableBattleRoyaleAlerts)
                 }),
                 // Editor
                 new SettingsSection(this, FontAwesome.Get(FontAwesomeIcon.fa_beaker), "Editor", new List<Drawable>()

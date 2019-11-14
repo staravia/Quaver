@@ -17,11 +17,13 @@ using Microsoft.Xna.Framework.Input;
 using Quaver.Shared.Assets;
 using Quaver.Shared.Audio;
 using Quaver.Shared.Config;
+using Quaver.Shared.Database.Judgements;
 using Quaver.Shared.Database.Maps;
 using Quaver.Shared.Database.Scores;
 using Quaver.Shared.Database.Settings;
 using Quaver.Shared.Discord;
 using Quaver.Shared.Graphics.Backgrounds;
+using Quaver.Shared.Graphics.Dialogs.Menu;
 using Quaver.Shared.Graphics.Notifications;
 using Quaver.Shared.Graphics.Overlays.Volume;
 using Quaver.Shared.Graphics.Transitions;
@@ -33,6 +35,7 @@ using Quaver.Shared.Screens;
 using Quaver.Shared.Screens.Alpha;
 using Quaver.Shared.Screens.Menu;
 using Quaver.Shared.Screens.Settings;
+using Quaver.Shared.Screens.Tests.Footer;
 using Quaver.Shared.Skinning;
 using Steamworks;
 using Wobble;
@@ -41,6 +44,8 @@ using Wobble.Audio.Tracks;
 using Wobble.Bindables;
 using Wobble.Discord;
 using Wobble.Discord.RPC;
+using Wobble.Extended.HotReload;
+using Wobble.Extended.HotReload.Screens;
 using Wobble.Graphics;
 using Wobble.Graphics.UI.Debugging;
 using Wobble.Graphics.UI.Dialogs;
@@ -52,12 +57,16 @@ using Version = YamlDotNet.Core.Version;
 
 namespace Quaver.Shared
 {
+#if VISUAL_TESTS
+    public class QuaverGame : HotLoaderGame
+#else
     public class QuaverGame : WobbleGame
+#endif
     {
         /// <inheritdoc />
         /// <summary>
         /// </summary>
-        protected override bool IsReadyToUpdate { get; set; }
+    protected override bool IsReadyToUpdate { get; set; }
 
         /// <summary>
         ///     The volume controller for the game.
@@ -82,10 +91,6 @@ namespace Quaver.Shared
                                         AssemblyName.Version.Build != 0;
 
         /// <summary>
-        /// </summary>
-        public List<Action> ScheduledRenderTargetDraws { get; } = new List<Action>();
-
-        /// <summary>
         ///     Stringified version name of the client.
         /// </summary>
         public string Version
@@ -105,10 +110,11 @@ namespace Quaver.Shared
         /// </summary>
         private bool WindowActiveInPreviousFrame { get; set; }
 
-        /// <inheritdoc />
-        /// <summary>
-        /// </summary>
+#if VISUAL_TESTS
+        public QuaverGame(HotLoader hl) : base(hl)
+#else
         public QuaverGame()
+#endif
         {
             Content.RootDirectory = "Content";
             InitializeFpsLimiting();
@@ -156,10 +162,7 @@ namespace Quaver.Shared
             SteamManager.SendAvatarRetrievalRequest(SteamUser.GetSteamID().m_SteamID);
 
             // Load all game assets.
-            FontsBitmap.Load();
             Fonts.Load();
-            FontAwesome.Load();
-            UserInterface.Load();
 
             BackgroundHelper.Initialize();
 
@@ -180,8 +183,12 @@ namespace Quaver.Shared
 
             Logger.Debug($"Currently running Quaver version: `{Version}`", LogType.Runtime);
 
+#if VISUAL_TESTS
+            Window.Title = $"Quaver Visual Test Runner";
+#else
             Window.Title = !IsDeployedBuild ? $"Quaver - {Version}" : $"Quaver v{Version}";
-            QuaverScreenManager.ScheduleScreenChange(() => new AlphaScreen());
+            QuaverScreenManager.ScheduleScreenChange(() => new MenuScreen());
+#endif
         }
 
         /// <inheritdoc />
@@ -217,13 +224,13 @@ namespace Quaver.Shared
 
             BackgroundManager.Update(gameTime);
             BackgroundHelper.Update(gameTime);
-            NotificationManager.Update(gameTime);
             ChatManager.Update(gameTime);
             DialogManager.Update(gameTime);
 
             HandleGlobalInput(gameTime);
 
             QuaverScreenManager.Update(gameTime);
+            NotificationManager.Update(gameTime);
             Transitioner.Update(gameTime);
 
             SkinManager.HandleSkinReloading();
@@ -238,12 +245,6 @@ namespace Quaver.Shared
         {
             if (!IsReadyToUpdate)
                 return;
-
-            for (var i = ScheduledRenderTargetDraws.Count - 1; i >= 0; i--)
-            {
-                ScheduledRenderTargetDraws[i]?.Invoke();
-                ScheduledRenderTargetDraws.Remove(ScheduledRenderTargetDraws[i]);
-            }
 
             base.Draw(gameTime);
 
@@ -270,6 +271,7 @@ namespace Quaver.Shared
             ScoreDatabaseCache.CreateTable();
             MapDatabaseCache.Load(false);
             QuaverSettingsDatabaseCache.Initialize();
+            JudgementWindowsDatabaseCache.Load();
 
             // Force garabge collection.
             GC.Collect();
@@ -336,17 +338,17 @@ namespace Quaver.Shared
         /// </summary>
         private void CreateFpsCounter()
         {
-            var fpsCounter = new FpsCounter(Fonts.Exo2SemiBold, 16)
+            var fpsCounter = new FpsCounter(FontsBitmap.GothamRegular, 18)
             {
                 Parent = GlobalUserInterface,
                 Alignment = Alignment.BotRight,
                 Size = new ScalableVector2(70, 30),
                 TextFps =
                 {
-                    Tint = Color.LimeGreen
+                    Tint = Color.White
                 },
-                X = -10,
-                Y = -25,
+                X = -5,
+                Y = -36,
                 Alpha = 0
             };
 
@@ -459,6 +461,8 @@ namespace Quaver.Shared
                 case QuaverScreenType.Menu:
                 case QuaverScreenType.Select:
                 case QuaverScreenType.Editor:
+                case QuaverScreenType.Multiplayer:
+                case QuaverScreenType.Lobby:
                     DialogManager.Show(new SettingsDialog());
                     break;
             }
@@ -508,5 +512,12 @@ namespace Quaver.Shared
 
             WindowActiveInPreviousFrame = IsActive;
         }
+
+#if VISUAL_TESTS
+        protected override HotLoaderScreen InitializeHotLoaderScreen() => new HotLoaderScreen(new Dictionary<string, Type>()
+        {
+            {"Menu Footer", typeof(MenuFooterTestScreen)}
+        });
+#endif
     }
 }

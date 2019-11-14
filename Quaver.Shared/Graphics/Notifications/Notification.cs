@@ -31,9 +31,16 @@ namespace Quaver.Shared.Graphics.Notifications
         private Sprite Container { get; }
 
         /// <summary>
+        ///     This container is used for centering and scaling the avatar sprite while maintaining a set width and height.
+        ///
+        ///     This was done due to the fact that Texture2D can not be scaled without affecting the sprite's width and height values.
+        /// </summary>
+        private Container AvatarContainer { get; }
+
+        /// <summary>
         ///     The notification content text.
         /// </summary>
-        private SpriteText Content { get; }
+        private SpriteTextBitmap Content { get; }
 
         /// <summary>
         ///     The avatar sprite of the notification, depending on the type.
@@ -62,7 +69,6 @@ namespace Quaver.Shared.Graphics.Notifications
         internal Notification(Texture2D image, string text, Color color, EventHandler onClick = null)
         {
             BorderColor = color;
-
             Size = new ScalableVector2(350, 80);
             Tint = Color.White;
             SetChildrenAlpha = true;
@@ -76,23 +82,33 @@ namespace Quaver.Shared.Graphics.Notifications
                 Position = new ScalableVector2(1, 1)
             };
 
-            Avatar = new Sprite
-            {
-                Parent = this,
-                Alignment = Alignment.MidLeft,
-                Size = new ScalableVector2(Container.Height, Container.Height),
-                X = 2,
-                Image = image
-            };
-
-            Content = new SpriteText(Fonts.SourceSansProSemiBold, text, 12, (int) (Width - Avatar.Width - 5))
+            AvatarContainer = new Container
             {
                 Parent = this,
                 Alignment = Alignment.TopLeft,
-                TextAlignment = Alignment.TopLeft,
-                X = Avatar.X + Avatar.Width + 5,
+                Size = new ScalableVector2(Container.Height, Container.Height),
+                X = 2,
+            };
+
+            Avatar = new Sprite
+            {
+                Parent = AvatarContainer,
+                Alignment = Alignment.MidCenter,
+                Size = new ScalableVector2(AvatarContainer.Height * 0.75f, AvatarContainer.Height * 0.75f),
+                Image = image
+            };
+
+            Content = new SpriteTextBitmap(FontsBitmap.GothamRegular, text)
+            {
+                Parent = this,
+                Alignment = Alignment.TopLeft,
+                X = AvatarContainer.X + AvatarContainer.Width + 5,
+                FontSize = 15,
+                MaxWidth = (int)(Width - AvatarContainer.Width - 25),
                 Y = 10
             };
+
+            AdjustHeightIfRequired();
 
             Clicked += (o, e) => HasBeenClicked = true;
 
@@ -118,6 +134,7 @@ namespace Quaver.Shared.Graphics.Notifications
             if (!HasBeenClicked && TimeElapsedSinceShown >= 4000)
                 Alpha = MathHelper.Lerp(Alpha, 0, (float)Math.Min(GameBase.Game.TimeSinceLastFrame / 400, 1));
 
+            Avatar.Alpha = Alpha;
             base.Update(gameTime);
         }
 
@@ -131,6 +148,15 @@ namespace Quaver.Shared.Graphics.Notifications
                 return;
 
             base.Draw(gameTime);
+        }
+
+        private void AdjustHeightIfRequired()
+        {
+            if (Content.Height < Height)
+                return;
+
+            Height = Content.Height + 10 + Content.Y;
+            Container.Height = Height - 2;
         }
     }
 }
