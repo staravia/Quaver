@@ -24,7 +24,7 @@ using Quaver.Shared.Online.Chat;
 using Quaver.Shared.Screens.Download;
 using Quaver.Shared.Screens.Editor;
 using Quaver.Shared.Screens.Importing;
-using Quaver.Shared.Screens.Lobby;
+using Quaver.Shared.Screens.Main;
 using Quaver.Shared.Screens.Menu.UI;
 using Quaver.Shared.Screens.Menu.UI.Buttons;
 using Quaver.Shared.Screens.Menu.UI.Jukebox;
@@ -33,7 +33,10 @@ using Quaver.Shared.Screens.Menu.UI.Navigation.User;
 using Quaver.Shared.Screens.Menu.UI.Panels;
 using Quaver.Shared.Screens.Menu.UI.Tips;
 using Quaver.Shared.Screens.Menu.UI.Visualizer;
+using Quaver.Shared.Screens.MultiplayerLobby;
+using Quaver.Shared.Screens.Options;
 using Quaver.Shared.Screens.Select;
+using Quaver.Shared.Screens.Selection;
 using Quaver.Shared.Screens.Settings;
 using Wobble;
 using Wobble.Graphics;
@@ -286,7 +289,7 @@ namespace Quaver.Shared.Screens.Menu
                         game?.Exit();
                     }));
                 }),
-                new ButtonText(FontsBitmap.GothamRegular, "Options", 14, (sender, args) => DialogManager.Show(new SettingsDialog())),
+                new ButtonText(FontsBitmap.GothamRegular, "Options", 14, (sender, args) => DialogManager.Show(new OptionsDialog())),
                 new ButtonText(FontsBitmap.GothamRegular, "Chat", 14, (sender, args) =>
                 {
                     if (OnlineManager.Status.Value != ConnectionStatus.Connected)
@@ -294,8 +297,6 @@ namespace Quaver.Shared.Screens.Menu
                         NotificationManager.Show(NotificationLevel.Error, "You must be logged in to use the chat!");
                         return;
                     }
-
-                    ChatManager.ToggleChatOverlay(true);
                 }),
                 new ButtonText(FontsBitmap.GothamRegular, "Download Maps", 14, (sender, args) =>
                 {
@@ -362,7 +363,7 @@ namespace Quaver.Shared.Screens.Menu
         /// <param name="e"></param>
         private void OnSinglePlayerPanelClicked(object sender, EventArgs e)
         {
-            var screen = Screen as MenuScreen;
+            var screen = Screen as MainMenuScreen;
 
             // We have maps in the queue, so we need to go to the import screen first
             if (MapsetImporter.Queue.Count != 0)
@@ -394,7 +395,7 @@ namespace Quaver.Shared.Screens.Menu
             screen?.Exit(() =>
             {
                 AudioEngine.Track?.Fade(10, 300);
-                return new SelectScreen();
+                return new SelectionScreen();
             });
         }
 
@@ -436,7 +437,7 @@ namespace Quaver.Shared.Screens.Menu
                 return;
             }
 
-            screen.Exit(() => new LobbyScreen());
+            screen.Exit(() => new MultiplayerLobbyScreen());
         }
 
         /// <summary>
@@ -452,7 +453,7 @@ namespace Quaver.Shared.Screens.Menu
                 return;
             }
 
-            var screen = Screen as MenuScreen;
+            var screen = Screen as MainMenuScreen;
 
             screen?.Exit(() =>
             {
@@ -467,7 +468,7 @@ namespace Quaver.Shared.Screens.Menu
                 {
                     Logger.Error(ex, LogType.Runtime);
                     NotificationManager.Show(NotificationLevel.Error, "Unable to read map file!");
-                    return new MenuScreen();
+                    return new MainMenuScreen();
                 }
             });
         }

@@ -49,14 +49,14 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys
         {
             get
             {
-                switch (MapManager.Selected.Value.Qua.Mode)
+                switch (MapManager.Selected.Value?.Qua?.Mode)
                 {
                     case GameMode.Keys4:
                         return ConfigManager.ScrollDirection4K.Value;
                     case GameMode.Keys7:
                         return ConfigManager.ScrollDirection7K.Value;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        return ConfigManager.ScrollDirection4K.Value;
                 }
             }
         }
@@ -81,7 +81,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys
 
             var direction = ScrollDirection;
             var playfield = (GameplayPlayfieldKeys)Playfield;
-            var keys = MapManager.Selected.Value.Qua.GetKeyCount();
+            var keys = MapManager.Selected.Value.Qua?.GetKeyCount() ?? 4;
 
             if (direction.Equals(ScrollDirection.Split))
             {
@@ -105,7 +105,7 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Keys
 
             // This should be _after_ base.Update, since this uses HitObjectManager.CurrentTrackPosition,
             // which is updated in base.Update.
-            if (!Screen.Failed && !Screen.IsPaused && TimingLineManager != null)
+            if (TimingLineManager != null)
                 foreach (var manager in TimingLineManager) manager.UpdateObjectPool();
         }
 

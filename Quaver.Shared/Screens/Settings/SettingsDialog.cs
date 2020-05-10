@@ -238,10 +238,11 @@ namespace Quaver.Shared.Screens.Settings
                 var dismissDalog = true;
 
                 // Handle skin reloads
-                if (SkinManager.NewQueuedSkin != null && SkinManager.NewQueuedSkin != ConfigManager.Skin.Value
+                if (SkinManager.NewQueuedSkin != null && SkinManager.NewQueuedSkin != ConfigManager.Skin.Value ||
+                    SkinManager.NewWorkshopSkin != null && SkinManager.NewWorkshopSkin != ConfigManager.Skin.Value
                     || NewQueuedDefaultSkin != ConfigManager.DefaultSkin.Value)
                 {
-                    ConfigManager.Skin.Value = SkinManager.NewQueuedSkin;
+                    ConfigManager.Skin.Value = ConfigManager.UseSteamWorkshopSkin.Value ? SkinManager.NewWorkshopSkin : SkinManager.NewQueuedSkin;
                     ConfigManager.DefaultSkin.Value = NewQueuedDefaultSkin;
 
                     Transitioner.FadeIn();
@@ -366,6 +367,7 @@ namespace Quaver.Shared.Screens.Settings
                     new SettingsBool(this, "Smooth Accuracy Changes", ConfigManager.SmoothAccuracyChanges),
                     new SettingsBool(this, "Enable Battle Royale Background Flashing", ConfigManager.EnableBattleRoyaleBackgroundFlashing),
                     new SettingsBool(this, "Enable Battle Royale Alerts", ConfigManager.EnableBattleRoyaleAlerts),
+                    new SettingsBool(this, "Display Unbeatable Scores", ConfigManager.DisplayUnbeatableScoresDuringGameplay),
                     new SettingsBool(this, "Show Spectators", ConfigManager.ShowSpectators)
                 }),
                 // Editor
@@ -384,8 +386,11 @@ namespace Quaver.Shared.Screens.Settings
                 new SettingsSection(this, FontAwesome.Get(FontAwesomeIcon.fa_pencil), "Skin", new List<Drawable>()
                 {
                     new SettingsCustomSkin(this, "Custom Skin"),
+                    new SettingsWorkshopSkin(this, "Steam Workshop Skin"),
                     new SettingsDefaultSkin(this, "Default Skin"),
-                    new SettingsExportSkin(this, "Export Custom Skin")
+                    new SettingsBool(this, "Use Steam Workshop Skin", ConfigManager.UseSteamWorkshopSkin),
+                    new SettingsExportSkin(this, "Export Custom Skin"),
+                    new SettingUploadToWorkshop(this, "Upload Custom Skin To Workshop")
                 }),
                 // Input
                 new SettingsSection(this, FontAwesome.Get(FontAwesomeIcon.fa_keyboard), "Input", new List<Drawable>
@@ -406,6 +411,23 @@ namespace Quaver.Shared.Screens.Settings
                         ConfigManager.KeyMania7K5,
                         ConfigManager.KeyMania7K6,
                         ConfigManager.KeyMania7K7
+                    }),
+                    new SettingsKeybindMultiple(this, "Co-op 2 Player Layout (4 Keys)", new List<Bindable<Keys>>
+                    {
+                        ConfigManager.KeyCoop2P4K1,
+                        ConfigManager.KeyCoop2P4K2,
+                        ConfigManager.KeyCoop2P4K3,
+                        ConfigManager.KeyCoop2P4K4,
+                    }),
+                    new SettingsKeybindMultiple(this, "Co-op 2 Player Layout (7 Keys)", new List<Bindable<Keys>>
+                    {
+                        ConfigManager.KeyCoop2P7K1,
+                        ConfigManager.KeyCoop2P7K2,
+                        ConfigManager.KeyCoop2P7K3,
+                        ConfigManager.KeyCoop2P7K4,
+                        ConfigManager.KeyCoop2P7K5,
+                        ConfigManager.KeyCoop2P7K6,
+                        ConfigManager.KeyCoop2P7K7,
                     }),
                     new SettingsKeybind(this, "Pause", ConfigManager.KeyPause),
                     new SettingsKeybind(this, "Skip Intro", ConfigManager.KeySkipIntro),
@@ -433,7 +455,9 @@ namespace Quaver.Shared.Screens.Settings
                     new SettingsBool(this, "Automatically Login To The Server", ConfigManager.AutoLoginToServer),
                     new SettingsBool(this, "Load Maps From Other Games", ConfigManager.AutoLoadOsuBeatmaps),
                     new SettingsBool(this, "Display Menu Audio Visualizer", ConfigManager.DisplayMenuAudioVisualizer),
-                    new SettingsBool(this, "Display Failed Local Scores", ConfigManager.DisplayFailedLocalScores)
+                    new SettingsBool(this, "Display Failed Local Scores", ConfigManager.DisplayFailedLocalScores),
+                    new SettingsBool(this, "Display Online Friends Notification", ConfigManager.DisplayFriendOnlineNotifications),
+                    new SettingsBool(this, "Display Song Request Notifications", ConfigManager.DisplaySongRequestNotifications)
                 })
             };
 

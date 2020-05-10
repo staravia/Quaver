@@ -27,6 +27,7 @@ using Quaver.Shared.Audio;
 using Quaver.Shared.Config;
 using Quaver.Shared.Database.Judgements;
 using Quaver.Shared.Database.Maps;
+using Quaver.Shared.Database.Profiles;
 using Quaver.Shared.Database.Scores;
 using Quaver.Shared.Discord;
 using Quaver.Shared.Graphics.Backgrounds;
@@ -39,10 +40,15 @@ using Quaver.Shared.Screens.Gameplay;
 using Quaver.Shared.Screens.Gameplay.Rulesets.Input;
 using Quaver.Shared.Screens.Gameplay.UI.Scoreboard;
 using Quaver.Shared.Screens.Loading;
+using Quaver.Shared.Screens.Multi;
 using Quaver.Shared.Screens.Multiplayer;
 using Quaver.Shared.Screens.Result.UI;
 using Quaver.Shared.Screens.Select;
+using Quaver.Shared.Screens.Selection;
+using Quaver.Shared.Screens.Tournament.Gameplay;
+using Quaver.Shared.Skinning;
 using Wobble;
+using Wobble.Audio.Samples;
 using Wobble.Graphics.UI.Dialogs;
 using Wobble.Input;
 using Wobble.Logging;
@@ -120,27 +126,32 @@ namespace Quaver.Shared.Screens.Result
 
         /// <summary>
         /// </summary>
-        private MultiplayerScreen MultiplayerScreen { get; }
+        public Dictionary<ScoreboardUser, ResultScoreContainer> CachedScoreContainers { get; set; }
 
         /// <summary>
-        /// </summary>
-        public Dictionary<ScoreboardUser, ResultScoreContainer> CachedScoreContainers { get; set; }
+        ///		An audio Channel that holds the applause sound effect, that is played when the user passes a map.
+        ///	</summary>
+        private AudioSampleChannel ApplauseSoundEffect { get; set; }
 
         /// <summary>
         /// </summary>
         /// <param name="gameplay"></param>
         /// <param name="multiplayerScores"></param>
-        /// <param name="multiplayerScreen"></param>
-        public ResultScreen(GameplayScreen gameplay, List<ScoreboardUser> multiplayerScores = null, MultiplayerScreen multiplayerScreen = null)
+        public ResultScreen(GameplayScreen gameplay, List<ScoreboardUser> multiplayerScores = null)
         {
             Gameplay = gameplay;
             ResultsType = ResultScreenType.Gameplay;
             ScoreProcessor = Gameplay.Ruleset.ScoreProcessor;
             MultiplayerScores = multiplayerScores;
-            MultiplayerScreen = multiplayerScreen;
 
             InitializeIfGameplayType();
             ChangeDiscordPresence();
+
+            if(!gameplay.Failed)
+            {
+                ApplauseSoundEffect = SkinManager.Skin.SoundApplause.CreateChannel();
+                ApplauseSoundEffect.Play();
+            }
 
             if (MultiplayerScores != null)
             {
@@ -237,6 +248,7 @@ namespace Quaver.Shared.Screens.Result
                     container.Value.Destroy();
             }
 
+            ApplauseSoundEffect?.Stop();
             base.Destroy();
         }
 
@@ -363,11 +375,26 @@ namespace Quaver.Shared.Screens.Result
             if (Gameplay.Ruleset.ScoreProcessor.CurrentJudgements[Judgement.Miss] == Gameplay.Ruleset.ScoreProcessor.TotalJudgementCount)
                 return;
 
+            // Don't submit if we're coming from tournament mode
+            if (Gameplay is TournamentGameplayScreen)
+                return;
+
+            // Prevent co-op mode from submitting scores
+            if (ModManager.IsActivated(ModIdentifier.Coop))
+                return;
+
             ThreadScheduler.Run(SaveLocalScore);
 
             // Don't submit scores if disconnected from the server completely.
             if (OnlineManager.Status.Value == ConnectionStatus.Disconnected)
                 return;
+
+            // Don't submit scores that have unranked modifiers
+            if (ModManager.CurrentModifiersList.Any(x => !x.Ranked()))
+            {
+                Logger.Important($"Skipping score submission due to having unranked modifiers activated", LogType.Runtime);
+                return;
+            }
 
             if (Gameplay.IsMultiplayerGame)
             {
@@ -431,7 +458,10 @@ namespace Quaver.Shared.Screens.Result
 
             try
             {
-                var localScore = Score.FromScoreProcessor(Gameplay.Ruleset.ScoreProcessor, Gameplay.MapHash, ConfigManager.Username.Value, ScrollSpeed,
+                var profileName = UserProfileDatabaseCache.Selected.Value.Username;
+                var name = !string.IsNullOrEmpty(profileName) ? profileName : ConfigManager.Username.Value;
+
+                var localScore = Score.FromScoreProcessor(Gameplay.Ruleset.ScoreProcessor, Gameplay.MapHash, name, ScrollSpeed,
                     Gameplay.PauseCount, Gameplay.Map.RandomizeModifierSeed);
 
                 localScore.RatingProcessorVersion = RatingProcessorKeys.Version;
@@ -452,6 +482,12 @@ namespace Quaver.Shared.Screens.Result
                 else
                     localScore.PerformanceRating = new RatingProcessorKeys(Map.DifficultyFromMods(Gameplay.Ruleset.ScoreProcessor.Mods)).CalculateRating(Gameplay.Ruleset.StandardizedReplayPlayer.ScoreProcessor.Accuracy);
 
+                if (UserProfileDatabaseCache.Selected.Value.Id != 0 &&
+                    !UserProfileDatabaseCache.Selected.Value.IsOnline)
+                {
+                    localScore.UserProfileId = UserProfileDatabaseCache.Selected.Value.Id;
+                }
+
                 scoreId = ScoreDatabaseCache.InsertScoreIntoDatabase(localScore);
             }
             catch (Exception e)
@@ -462,7 +498,8 @@ namespace Quaver.Shared.Screens.Result
 
             try
             {
-                Replay.Write($"{ConfigManager.DataDirectory}/r/{scoreId}.qr");
+                if (scoreId != -1)
+                    Replay.Write($"{ConfigManager.DataDirectory}/r/{scoreId}.qr");
             }
             catch (Exception e)
             {
@@ -489,12 +526,11 @@ namespace Quaver.Shared.Screens.Result
                     return;
                 }
 
-                Exit(() => MultiplayerScreen ?? new MultiplayerScreen(OnlineManager.CurrentGame));
-                MultiplayerScreen.SetRichPresence();
+                Exit(() => new MultiplayerGameScreen());
                 return;
             }
 
-            Exit(() => new SelectScreen());
+            Exit(() => new SelectionScreen());
         }
 
         /// <summary>
@@ -704,6 +740,9 @@ namespace Quaver.Shared.Screens.Result
         private void ChangeDiscordPresence()
         {
             DiscordHelper.Presence.EndTimestamp = 0;
+            DiscordHelper.Presence.LargeImageText = OnlineManager.GetRichPresenceLargeKeyText(ConfigManager.SelectedGameMode.Value);
+            DiscordHelper.Presence.SmallImageKey = ModeHelper.ToShortHand(ConfigManager.SelectedGameMode.Value).ToLower();
+            DiscordHelper.Presence.SmallImageText = ModeHelper.ToLongHand(ConfigManager.SelectedGameMode.Value);
 
             // Don't change if we're loading in from a replay file.
             if (ResultsType == ResultScreenType.Replay || Gameplay.InReplayMode)

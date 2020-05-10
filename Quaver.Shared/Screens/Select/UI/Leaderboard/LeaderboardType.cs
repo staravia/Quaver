@@ -12,6 +12,8 @@ namespace Quaver.Shared.Screens.Select.UI.Leaderboard
         Local,
         Global,
         Mods,
-        Country
+        Country,
+        Rate,
+        Friends
     }
 }

@@ -6,12 +6,14 @@ using Quaver.Shared.Assets;
 using Quaver.Shared.Database.Judgements;
 using Quaver.Shared.Graphics;
 using Quaver.Shared.Graphics.Online.Username;
+using Quaver.Shared.Screens.Selection.UI.Modifiers.Dialogs.Windows;
 using TagLib.Id3v2;
 using Wobble.Graphics;
 using Wobble.Graphics.Sprites;
 using Wobble.Graphics.UI.Dialogs;
 using Wobble.Graphics.UI.Form;
 using Wobble.Input;
+using Wobble.Managers;
 using Wobble.Window;
 
 namespace Quaver.Shared.Screens.Select.UI.Modifiers.Windows
@@ -92,7 +94,7 @@ namespace Quaver.Shared.Screens.Select.UI.Modifiers.Windows
                 Y = Header.Y + Header.Height + 5
             };
 
-            Textbox = new Textbox(new ScalableVector2(400, 40), Fonts.Exo2SemiBold, 16, Windows.Name)
+            Textbox = new Textbox(new ScalableVector2(400, 40), FontManager.GetWobbleFont(Fonts.LatoBlack), 16, Windows.Name)
             {
                 Parent = ContainingBox,
                 Alignment = Alignment.TopCenter,

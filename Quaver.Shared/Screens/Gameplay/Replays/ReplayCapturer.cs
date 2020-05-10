@@ -120,6 +120,9 @@ namespace Quaver.Shared.Screens.Gameplay.Replays
             }
 
             LastKeyPressState = GetKeyPressState();
+
+            if (Screen.IsPlayComplete || Screen.Failed)
+                ShouldCapture = false;
         }
 
         /// <summary>

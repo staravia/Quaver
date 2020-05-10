@@ -31,6 +31,7 @@ using Quaver.Shared.Scheduling;
 using Quaver.Shared.Screens.Editor;
 using Quaver.Shared.Screens.Importing;
 using Quaver.Shared.Screens.Loading;
+using Quaver.Shared.Screens.Main;
 using Quaver.Shared.Screens.Menu;
 using Quaver.Shared.Screens.Multiplayer;
 using Quaver.Shared.Screens.Result;
@@ -341,7 +342,7 @@ namespace Quaver.Shared.Screens.Select
         /// <summary>
         ///     Handles when the user wants to increase/decrease the rate of the song.
         /// </summary>
-        private static void HandleKeyPressControlRateChange()
+        public static void HandleKeyPressControlRateChange()
         {
             if (!KeyboardManager.CurrentState.IsKeyDown(Keys.LeftControl) &&
                 !KeyboardManager.CurrentState.IsKeyDown(Keys.RightControl))
@@ -567,7 +568,7 @@ namespace Quaver.Shared.Screens.Select
                         AudioEngine.Track?.Fade(10, 300);
                 }
 
-                return new MenuScreen();
+                return new MainMenuScreen();
             });
         }
 

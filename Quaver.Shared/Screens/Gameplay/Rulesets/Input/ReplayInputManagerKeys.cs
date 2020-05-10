@@ -15,8 +15,11 @@ using Quaver.API.Replays.Virtual;
 using Quaver.Shared.Audio;
 using Quaver.Shared.Database.Judgements;
 using Quaver.Shared.Modifiers;
+using Quaver.Shared.Screens.Gameplay.Rulesets.Keys;
 using Quaver.Shared.Screens.Gameplay.Rulesets.Keys.HitObjects;
 using Quaver.Shared.Screens.Gameplay.Rulesets.Keys.Playfield;
+using Quaver.Shared.Screens.Tournament.Gameplay;
+using Wobble.Logging;
 
 namespace Quaver.Shared.Screens.Gameplay.Rulesets.Input
 {
@@ -63,6 +66,10 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Input
         private int CurrentVirtualReplayStat { get; set; } = -1;
 
         /// <summary>
+        /// </summary>
+        private JudgementWindows Windows { get; set; }
+
+        /// <summary>
         ///     Ctor -
         /// </summary>
         /// <param name="screen"></param>
@@ -71,13 +78,17 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Input
             Screen = screen;
             Replay = Screen.LoadedReplay;
 
-            var windows = Screen.SpectatorClient != null
-                ? JudgementWindowsDatabaseCache.Standard
-                : JudgementWindowsDatabaseCache.Selected.Value;
+            Windows = Screen.SpectatorClient != null ? JudgementWindowsDatabaseCache.Standard : JudgementWindowsDatabaseCache.Selected.Value;
+            VirtualPlayer = new VirtualReplayPlayer(Replay, Screen.Map, Windows, Screen.SpectatorClient != null);
 
-            VirtualPlayer = new VirtualReplayPlayer(Replay, Screen.Map, windows, Screen.SpectatorClient != null);
-
-            VirtualPlayer.PlayAllFrames();
+            try
+            {
+                VirtualPlayer.PlayAllFrames();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, LogType.Runtime);
+            }
 
             // Populate unique key presses/releases.
             for (var i = 0; i < screen.Map.GetKeyCount(); i++)
@@ -90,46 +101,47 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Input
         /// <summary>
         ///     Determines which frame we are on in the replay and sets if it has unique key presses/releases.
         /// </summary>
-        internal void HandleInput()
+        internal void HandleInput(bool forceInput = false)
         {
-            if (Screen.SpectatorClient != null)
+            if (Screen.SpectatorClient != null && !Screen.IsSongSelectPreview)
                 VirtualPlayer.PlayAllFrames();
 
             HandleScoring();
 
-            if (CurrentFrame >= Replay.Frames.Count || !(Manager.CurrentAudioPosition >= Replay.Frames[CurrentFrame].Time) || !Screen.InReplayMode)
+            if (!forceInput && CurrentFrame >= Replay.Frames.Count || !(Manager.CurrentAudioPosition >= Replay.Frames[CurrentFrame].Time) || !Screen.InReplayMode)
                 return;
 
-            var previousActive = Replay.KeyPressStateToLanes(Replay.Frames[CurrentFrame - 1].Keys);
-            var currentActive = Replay.KeyPressStateToLanes(Replay.Frames[CurrentFrame].Keys);
-
-            foreach (var activeLane in currentActive)
+            if (Math.Abs(Manager.CurrentAudioPosition - Replay.Frames[CurrentFrame].Time) >= 200)
             {
-                try
-                {
-                    if (!previousActive.Contains(activeLane))
-                        UniquePresses[activeLane] = true;
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
+                CurrentFrame = Replay.Frames.FindLastIndex(x => x.Time < AudioEngine.Track.Time);
+                Logger.Important($"Skipped to replay frame: {CurrentFrame}", LogType.Runtime, false);
             }
 
-            foreach (var activeLane in previousActive)
+            try
             {
-                try
-                {
-                    if (!currentActive.Contains(activeLane))
-                        UniqueReleases[activeLane] = true;
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
-            }
+                List<int> previousActive;
 
-            CurrentFrame++;
+                previousActive = CurrentFrame - 1 >= 0
+                    ? Replay.KeyPressStateToLanes(Replay.Frames[CurrentFrame - 1].Keys)
+                    : new List<int>();
+
+                var currentActive = Replay.KeyPressStateToLanes(Replay.Frames[CurrentFrame].Keys);
+
+                foreach (var lane in currentActive)
+                    UniquePresses[lane] = !previousActive.Contains(lane);
+
+                foreach (var lane in previousActive)
+                    UniqueReleases[lane] = !currentActive.Contains(lane);
+            }
+            catch (Exception e)
+            {
+                // ignored
+                Console.WriteLine(e);
+            }
+            finally
+            {
+                CurrentFrame++;
+            }
         }
 
         /// <summary>
@@ -137,10 +149,12 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Input
         /// </summary>
         public void HandleSpectating()
         {
-            if (Screen.SpectatorClient == null)
+            if (Screen.SpectatorClient == null || Screen.IsSongSelectPreview)
                 return;
 
-            if (CurrentFrame >= Replay.Frames.Count)
+            var isTournament = Screen is TournamentGameplayScreen;
+
+            if (CurrentFrame >= Replay.Frames.Count && !isTournament)
             {
                 if (AudioEngine.Track.IsPlaying)
                     AudioEngine.Track.Pause();
@@ -152,10 +166,10 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Input
 
             VirtualPlayer.PlayAllFrames();
 
-            if (Screen.IsPaused)
+            if (Screen.IsPaused && !isTournament)
                 Screen.IsPaused = false;
 
-            if (AudioEngine.Track.IsPaused)
+            if (AudioEngine.Track.IsPaused && !isTournament)
                 AudioEngine.Track.Play();
         }
 
@@ -195,12 +209,43 @@ namespace Quaver.Shared.Screens.Gameplay.Rulesets.Input
 
         internal void HandleSkip()
         {
-            var frame = Replay.Frames.FindLastIndex(x => x.Time <= Manager.CurrentAudioPosition);
+            var time = AudioEngine.Track.Time;
+
+            var frame = Replay.Frames.FindLastIndex(x => x.Time < time);
 
             if (frame == -1)
                 return;
 
-            CurrentFrame = ModManager.IsActivated(ModIdentifier.Autoplay) ? frame + 1 : frame;
+            CurrentFrame = frame - 1;
+
+            if (CurrentFrame < 0)
+                CurrentFrame = 0;
+
+            // Reset the replay input state to one frame prior
+            UniquePresses.Clear();
+            UniqueReleases.Clear();
+
+            for (var i = 0; i < Screen.Map.GetKeyCount(); i++)
+            {
+                UniquePresses.Add(false);
+                UniqueReleases.Add(false);
+            }
+
+            var im = Screen.Ruleset.InputManager as KeysInputManager;
+            im?.BindingStore.ForEach(x => x.Pressed = false);
+            Screen.Ruleset.InputManager.HandleInput(0);
+
+            CurrentVirtualReplayStat = -1;
+
+            // Create a fresh scrore processor, so the score can be recalculated
+            Screen.Ruleset.ScoreProcessor = new ScoreProcessorKeys(Screen.Map, ModManager.Mods, Windows);
+
+            // Update the processor for the health bar, so it doesn't get stuck
+            if (Screen.Ruleset is GameplayRulesetKeys ruleset)
+            {
+                var playfield = (GameplayPlayfieldKeys) ruleset.Playfield;
+                playfield.Stage.HealthBar.UpdateProcessor(Screen.Ruleset.ScoreProcessor);
+            }
         }
     }
 }

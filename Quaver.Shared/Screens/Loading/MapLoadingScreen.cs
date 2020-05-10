@@ -16,14 +16,17 @@ using Quaver.Server.Common.Objects;
 using Quaver.Shared.Config;
 using Quaver.Shared.Database.Maps;
 using Quaver.Shared.Database.Scores;
+using Quaver.Shared.Graphics.Backgrounds;
 using Quaver.Shared.Graphics.Notifications;
 using Quaver.Shared.Modifiers;
 using Quaver.Shared.Modifiers.Mods;
 using Quaver.Shared.Online;
 using Quaver.Shared.Scheduling;
 using Quaver.Shared.Screens.Gameplay;
+using Quaver.Shared.Screens.Multi;
 using Quaver.Shared.Screens.Multiplayer;
 using Quaver.Shared.Screens.Select;
+using Quaver.Shared.Screens.Selection;
 using Wobble;
 using Wobble.Audio;
 using Wobble.Audio.Tracks;
@@ -92,7 +95,8 @@ namespace Quaver.Shared.Screens.Loading
                 {
                     Logger.Error(e, LogType.Runtime);
                     NotificationManager.Show(NotificationLevel.Error, "Failed to load the map. Is your .qua file valid?");
-                    Exit(() => new SelectScreen());
+                    GameBase.Game.GlobalUserInterface.Cursor.Alpha = 1;
+                    Exit(() => new SelectionScreen());
                 }
             });
 
@@ -114,13 +118,23 @@ namespace Quaver.Shared.Screens.Loading
             if (MapManager.Selected.Value == null)
                 throw new Exception("No selected map, we should not be on this screen!");
 
+            // Make sure the absolutely correct map is selected in multiplayer
+            if (OnlineManager.CurrentGame != null)
+            {
+                MultiplayerGameScreen.SelectMultiplayerMap();
+                AddModsFromIdentifiers(OnlineManager.GetSelfActivatedMods());
+
+                if (MapManager.Selected.Value == null)
+                {
+                    Exit(() => new MultiplayerGameScreen());
+                    return;
+                }
+            }
+
             MapManager.Selected.Value.Qua = MapManager.Selected.Value.LoadQua();
 
             if (Replay != null)
                 AddModsFromIdentifiers(Replay.Mods);
-
-            if (OnlineManager.CurrentGame != null)
-                AddModsFromIdentifiers(OnlineManager.GetSelfActivatedMods());
 
             MapManager.Selected.Value.Qua.ApplyMods(ModManager.Mods);
 
@@ -180,11 +194,15 @@ namespace Quaver.Shared.Screens.Loading
                 case MapGame.Osu:
                     md5 = MapsetHelper.GetMd5Checksum($"{MapManager.OsuSongsFolder}/{MapManager.Selected.Value.Directory}/{MapManager.Selected.Value.Path}");
                     break;
+                // Etterna uses a "Chart Key" rather than an md5 hash, so allow it
+                case MapGame.Etterna:
+                    md5 = MapManager.Selected.Value.Md5Checksum;
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
-            Exit(() => new GameplayScreen(MapManager.Selected.Value.Qua, md5, new List<Score>(), Replay, false, 0, false, SpectatorClient));
+            Exit(() => new GameplayScreen(MapManager.Selected.Value.Qua, md5, Scores ?? new List<Score>(), Replay, false, 0, false, SpectatorClient));
         }
 
         /// <summary>
@@ -192,8 +210,19 @@ namespace Quaver.Shared.Screens.Loading
         /// </summary>
         public static void AddModsFromIdentifiers(ModIdentifier mods)
         {
-            // Remove all the current mods that we have on.
-            ModManager.RemoveAllMods();
+            if (ModManager.Mods == mods)
+                return;
+
+            // Only remove the modifiers that need to be removed and aren't already activated
+            for (var i = ModManager.CurrentModifiersList.Count - 1; i >= 0; i--)
+            {
+                var mod = ModManager.CurrentModifiersList[i];
+
+                if (mods.HasFlag(mod.ModIdentifier))
+                    continue;
+
+                ModManager.RemoveMod(mod.ModIdentifier);
+            }
 
             for (var i = 0; i <= Math.Log((long)mods, 2); i++)
             {
@@ -204,6 +233,10 @@ namespace Quaver.Shared.Screens.Loading
 
                 try
                 {
+                    // Mod is already activated
+                    if (ModManager.Mods.HasFlag(mod))
+                        continue;
+
                     ModManager.AddMod(mod);
                 }
                 catch (Exception e)
@@ -211,6 +244,9 @@ namespace Quaver.Shared.Screens.Loading
                     Logger.Error(e, LogType.Runtime);
                 }
             }
+
+            ModManager.FireModsChangedEvent();
+            ModManager.CheckModInconsistencies();
         }
     }
 }
